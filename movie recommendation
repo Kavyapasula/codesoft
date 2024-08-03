@@ -1,0 +1,28 @@
+import numpy as np
+import pandas as pd
+
+# Sample data: user-item ratings matrix
+data = {
+    'user_id': [1, 1, 1, 2, 2, 3, 3, 3],
+    'movie_id': [1, 2, 3, 1, 2, 2, 3, 4],
+    'rating': [5, 3, 4, 4, 5, 2, 4, 5]
+}
+ratings = pd.DataFrame(data)
+user_movie_matrix = ratings.pivot(index='user_id', columns='movie_id', values='rating)
+user_movie_matrix = user_movie_matrix.fillna(0)
+from sklearn.metrics.pairwise import cosine_similarity
+user_similarity = cosine_similarity(user_movie_matrix)
+user_similarity_df = pd.DataFrame(user_similarity, index=user_movie_matrix.index, columns=user_movie_matrix.index)
+def get_recommendations(user_id, user_movie_matrix, user_similarity_df, top_n=3):
+    similar_users = user_similarity_df[user_id].sort_values(ascending=False)
+    user_ratings = user_movie_matrix.loc[user_id]
+    weighted_ratings = np.dot(similar_users, user_movie_matrix)
+    normalization = np.array([np.abs(similar_users).sum(axis=0)])
+user_predicted_ratings = weighted_ratings / normalization
+    user_predicted_ratings = pd.Series(user_predicted_ratings, index=user_movie_matrix.columns)
+    user_predicted_ratings = user_predicted_ratings[user_ratings == 0]
+    recommendations = user_predicted_ratings.sort_values(ascending=False).head(top_n)
+    return recommendations
+user_id = 1
+recommendations = get_recommendations(user_id, user_movie_matrix, user_similarity_df, top_n=3)
+print(f"Top recommendations for user {user_id}:\n{recommendations}")
